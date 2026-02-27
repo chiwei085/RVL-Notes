@@ -294,6 +294,48 @@ button {
   overflow-x: auto;
 }
 
+.markdown-body pre:has(.syntax-highlighter) {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.codeblock {
+  position: relative;
+}
+
+.codeblock-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  border: 1px solid #243041;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #dbe3ee;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.codeblock:hover .codeblock-copy {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.codeblock-copy:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: #334155;
+}
+
+.codeblock-copy:active {
+  background: rgba(15, 23, 42, 1);
+}
+
 .markdown-body pre code {
   background: transparent;
   border: none;
