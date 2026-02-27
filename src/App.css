@@ -1,0 +1,155 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Noto Sans TC", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #e5e7eb;
+  background: #0b1020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #0b1020;
+  color: #e5e7eb;
+}
+
+.shell {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+a {
+  color: #8ab4ff;
+}
+
+.home {
+  padding: clamp(72px, 8vh, 120px) 16px 48px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home h1 {
+  margin: 0;
+  line-height: 1.1;
+  font-size: 2rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: #94a3b8;
+}
+
+.card-list {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.note-card {
+  text-align: left;
+  width: 100%;
+  background: #111827;
+  border: 1px solid #243041;
+  border-radius: 14px;
+  padding: 16px;
+  color: inherit;
+}
+
+.note-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.note-card p {
+  margin: 0;
+  color: #aeb8c5;
+}
+
+.note-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.note-summary {
+  margin: 0 0 10px;
+  color: #aeb8c5;
+}
+
+.note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #9aa6b5;
+  font-size: 0.9rem;
+}
+
+.note-updated {
+  color: #9aa6b5;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.badge-category {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #a9c5ff;
+}
+
+.badge-status {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #0f172a;
+  border: 1px solid #243041;
+  color: #b7c3d8;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 980px) {
+  .card-list {
+    grid-template-columns: 1fr;
+  }
+}
