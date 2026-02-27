@@ -28,6 +28,10 @@ a {
   color: #8ab4ff;
 }
 
+button {
+  font: inherit;
+}
+
 .home {
   padding: clamp(72px, 8vh, 120px) 16px 48px;
 }
@@ -70,6 +74,11 @@ a {
   border-radius: 14px;
   padding: 16px;
   color: inherit;
+}
+
+.note-card:hover {
+  border-color: #3b82f6;
+  background: #0f172a;
 }
 
 .note-card h2 {
@@ -146,6 +155,67 @@ a {
   border: 1px solid #243041;
   color: #b7c3d8;
   font-size: 0.76rem;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #cbd5f5;
+}
+
+.search-block {
+  margin-top: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #243041;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.search-input::placeholder {
+  color: #6b7a90;
+}
+
+.category-block {
+  margin-top: 20px;
+}
+
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  cursor: pointer;
+}
+
+.category-chip.is-active {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(96, 165, 250, 0.85);
+  color: #e0ecff;
+}
+
+.tag-chip {
+  cursor: pointer;
+}
+
+.tag-chip.is-active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.85);
+  color: #e0ecff;
+}
+
+.empty-state {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #0f172a;
+  border: 1px dashed #243041;
+  color: #aeb8c5;
 }
 
 @media (max-width: 980px) {
