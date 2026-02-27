@@ -32,6 +32,43 @@ button {
   font: inherit;
 }
 
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px 16px;
+  background: rgba(11, 16, 32, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.topbar .shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.topbar button {
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.topbar button:hover {
+  background: #273449;
+}
+
+.topbar-logo {
+  height: 30px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
 .home {
   padding: clamp(72px, 8vh, 120px) 16px 48px;
 }
@@ -74,6 +111,7 @@ button {
   border-radius: 14px;
   padding: 16px;
   color: inherit;
+  cursor: pointer;
 }
 
 .note-card:hover {
@@ -228,23 +266,6 @@ button {
   color: #94a3b8;
 }
 
-.page-title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.page-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  color: #9aa6b5;
-  font-size: 0.9rem;
-}
-
 .markdown-body {
   line-height: 1.75;
   color: #dbe3ee;
@@ -258,6 +279,30 @@ button {
   margin-bottom: 0.6em;
   line-height: 1.3;
   scroll-margin-top: 84px;
+}
+
+.heading-anchor {
+  position: relative;
+}
+
+.heading-link {
+  margin-left: 8px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  font-size: 0.85em;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.heading-anchor:hover .heading-link,
+.heading-link.is-copied {
+  opacity: 1;
+}
+
+.heading-link:hover {
+  color: #e2e8f0;
 }
 
 .markdown-body p,
@@ -367,6 +412,59 @@ button {
 
 .markdown-body th {
   background: #111827;
+}
+
+.page-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: #9aa6b5;
+  font-size: 0.9rem;
+}
+
+.toc {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #0f172a;
+  border: 1px solid #1f2a3a;
+}
+
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #cbd5f5;
+}
+
+.toc-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.toc-link {
+  color: #9fb6da;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.toc-link:hover {
+  color: #c8dbff;
+}
+
+.toc-link.is-sub {
+  padding-left: 12px;
+  font-size: 0.85rem;
+  color: #8fa2c2;
 }
 
 .note-fallback {

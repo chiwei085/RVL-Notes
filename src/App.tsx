@@ -1,22 +1,27 @@
 import { useState } from "react";
+import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import "./App.css";
+import MarkdownNotePage from "./pages/MarkdownNotePage";
 import { notes, type NoteCategory } from "./data/notes";
+import logo from "./assets/logo.png";
 
 function HomePage() {
+  const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<NoteCategory[]>(
     []
   );
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const categories: NoteCategory[] = ["guide", "note", "project", "research"];
-  const categoryCounts = notes.reduce(
+  const baseNotes = notes;
+  const categoryCounts = baseNotes.reduce(
     (acc, note) => {
       acc[note.category] = (acc[note.category] ?? 0) + 1;
       return acc;
     },
     {} as Record<NoteCategory, number>
   );
-  const tagCounts = notes.reduce(
+  const tagCounts = baseNotes.reduce(
     (acc, note) => {
       note.tags.forEach((tag) => {
         acc[tag] = (acc[tag] ?? 0) + 1;
@@ -30,7 +35,7 @@ function HomePage() {
     .map(([tag]) => tag);
   const isAllActive = selectedCategories.length === 0;
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredNotes = notes.filter((note) => {
+  const filteredNotes = baseNotes.filter((note) => {
     if (!isAllActive && !selectedCategories.includes(note.category)) {
       return false;
     }
@@ -103,7 +108,7 @@ function HomePage() {
             }`}
             onClick={clearCategories}
           >
-            All ({notes.length})
+            All ({baseNotes.length})
           </button>
           {categories.map((category) => {
             const isActive = selectedCategories.includes(category);
@@ -140,40 +145,72 @@ function HomePage() {
       </section>
 
       <section className="card-list">
-        {sortedNotes.length === 0 ? (
-          <div className="empty-state">No notes match the current filters.</div>
-        ) : (
-          sortedNotes.map((note) => {
-            const displayTags = note.tags.slice(0, 3);
-            return (
-              <div key={note.slug} className="note-card">
-                <div className="note-card-header">
-                  <h2>{note.title}</h2>
-                  <span className="badge badge-category">{note.category}</span>
-                </div>
-                <p className="note-summary">{note.summary}</p>
-                <div className="note-meta">
-                  {note.status ? (
-                    <span className="badge badge-status">{note.status}</span>
-                  ) : null}
-                  <span className="note-updated">Updated: {note.updated}</span>
-                </div>
-                <div className="tag-list">
-                  {displayTags.map((tag) => (
-                    <span key={tag} className="tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+        {sortedNotes.length === 0
+          ? (
+              <div className="empty-state">
+                No notes match the current filters.
               </div>
-            );
-          })
-        )}
+            )
+          : sortedNotes.map((note) => {
+              const displayTags = note.tags.slice(0, 3);
+              return (
+                <button
+                  key={note.slug}
+                  className="note-card"
+                  onClick={() => navigate(`/note/${note.slug}`)}
+                >
+                  <div className="note-card-header">
+                    <h2>{note.title}</h2>
+                    <span className="badge badge-category">
+                      {note.category}
+                    </span>
+                  </div>
+                  <p className="note-summary">{note.summary}</p>
+                  <div className="note-meta">
+                    {note.status ? (
+                      <span className="badge badge-status">{note.status}</span>
+                    ) : null}
+                    <span className="note-updated">Updated: {note.updated}</span>
+                  </div>
+                  <div className="tag-list">
+                    {displayTags.map((tag) => (
+                      <span key={tag} className="tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
       </section>
     </main>
   );
 }
 
+function NotePage() {
+  const navigate = useNavigate();
+  const { slug } = useParams();
+  if (!slug) {
+    return null;
+  }
+  return (
+    <>
+      <nav className="topbar">
+        <div className="shell">
+          <button onClick={() => navigate("/")}>← 回首頁</button>
+          <img src={logo} alt="RVL-Notes logo" className="topbar-logo" />
+        </div>
+      </nav>
+      <MarkdownNotePage slug={slug} />
+    </>
+  );
+}
+
 export default function App() {
-  return <HomePage />;
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/note/:slug" element={<NotePage />} />
+    </Routes>
+  );
 }

@@ -1,9 +1,18 @@
 import ReactMarkdown from "react-markdown";
-import { useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
+import { createHeadingPlugin, type TocItem } from "../markdown/plugins";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
 
@@ -16,8 +25,71 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
   const content = getNoteContentBySlug(slug);
   const hasContent = Boolean(content);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copiedHeadingId, setCopiedHeadingId] = useState<string | null>(null);
   const copyTimeoutRef = useRef<number | null>(null);
-  const remarkPlugins = useMemo(() => [remarkGfm], []);
+  const headingCopyTimeoutRef = useRef<number | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tocItems = useMemo(() => {
+    const items: TocItem[] = [];
+    if (!content) {
+      return items;
+    }
+    const processor = remark().use(remarkGfm).use(createHeadingPlugin(items));
+    const tree = processor.parse(content);
+    processor.runSync(tree);
+    return items;
+  }, [content]);
+  const sectionParam = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("section");
+  }, [location.search]);
+  const remarkPlugins = useMemo(() => [remarkGfm, createHeadingPlugin()], []);
+
+  const scrollToHeading = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const buildSectionSearch = (sectionId?: string) => {
+    const params = new URLSearchParams(location.search);
+    if (sectionId) {
+      params.set("section", sectionId);
+    } else {
+      params.delete("section");
+    }
+    const search = params.toString();
+    return search ? `?${search}` : "";
+  };
+
+  const updateSection = (sectionId?: string) => {
+    navigate({ search: buildSectionSearch(sectionId) }, { replace: true });
+  };
+
+  const buildSectionLink = (sectionId: string) =>
+    `#/note/${slug}?section=${encodeURIComponent(sectionId)}`;
+
+  useEffect(() => {
+    if (!content) {
+      return;
+    }
+    if (sectionParam) {
+      requestAnimationFrame(() => {
+        scrollToHeading(sectionParam);
+      });
+      return;
+    }
+    const legacyId = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
+    if (!legacyId) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      scrollToHeading(legacyId);
+    });
+    updateSection(legacyId);
+  }, [content, location.hash, sectionParam]);
 
   const handleCopy = async (text: string, key: string) => {
     if (!navigator?.clipboard) {
@@ -38,6 +110,56 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
       console.warn("Copy failed", error);
       setCopiedKey(null);
     }
+  };
+
+  const handleCopySection = async (sectionId: string) => {
+    if (!navigator?.clipboard) {
+      console.warn("Clipboard API unavailable");
+      setCopiedHeadingId(null);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(buildSectionLink(sectionId));
+      setCopiedHeadingId(sectionId);
+      if (headingCopyTimeoutRef.current) {
+        window.clearTimeout(headingCopyTimeoutRef.current);
+      }
+      headingCopyTimeoutRef.current = window.setTimeout(() => {
+        setCopiedHeadingId((current) => (current === sectionId ? null : current));
+      }, 1200);
+    } catch (error) {
+      console.warn("Copy failed", error);
+      setCopiedHeadingId(null);
+    }
+  };
+
+  const renderHeading = (Tag: "h2" | "h3") => {
+    return ({ id, className, children, ...rest }: ComponentPropsWithoutRef<"h2">) => {
+      const headingId = typeof id === "string" ? id : "";
+      const isCopied = headingId && copiedHeadingId === headingId;
+      return (
+        <Tag
+          id={headingId || undefined}
+          className={["heading-anchor", className].filter(Boolean).join(" ")}
+          {...rest}
+        >
+          <span className="heading-text">{children}</span>
+          {headingId ? (
+            <button
+              type="button"
+              className={`heading-link${isCopied ? " is-copied" : ""}`}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                handleCopySection(headingId);
+              }}
+            >
+              {isCopied ? "Copied" : "🔗"}
+            </button>
+          ) : null}
+        </Tag>
+      );
+    };
   };
 
   if (!note) {
@@ -74,6 +196,44 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
             </span>
           ))}
         </div>
+        {tocItems.length > 0 && (
+          <details className="toc" open>
+            <summary
+              onClick={() => {
+                if (sectionParam) {
+                  updateSection();
+                }
+              }}
+            >
+              Table of contents
+            </summary>
+            <div className="toc-list">
+              {tocItems.map((item) => (
+                <Link
+                  key={item.id}
+                  className={`toc-link${item.depth === 3 ? " is-sub" : ""}`}
+                  to={{ pathname: location.pathname, search: buildSectionSearch(item.id) }}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.altKey ||
+                      event.shiftKey
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    scrollToHeading(item.id);
+                    updateSection(item.id);
+                  }}
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </div>
+          </details>
+        )}
       </header>
 
       <article className="markdown-body">
@@ -81,6 +241,8 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
             components={{
+              h2: renderHeading("h2"),
+              h3: renderHeading("h3"),
               code({ className, children, ...rest }) {
                 const match = /language-(\w+)/.exec(className || "");
                 if (match) {
