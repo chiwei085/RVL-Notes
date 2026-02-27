@@ -72,7 +72,10 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
   };
 
   const updateSection = (sectionId?: string) => {
-    navigate({ search: buildSectionSearch(sectionId) }, { replace: true });
+    navigate(
+      { search: buildSectionSearch(sectionId) },
+      { replace: true }
+    );
   };
 
   const buildSectionLink = (sectionId: string) =>
@@ -189,9 +192,12 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         <div className="page-title-row">
           <h1>{note.title}</h1>
           <span className="badge badge-category">{note.category}</span>
+          {note.status === "subpage" ? (
+            <span className="badge badge-status">Subpage</span>
+          ) : null}
         </div>
         <div className="page-meta">
-          {note.status ? (
+          {note.status && note.status !== "subpage" ? (
             <span className="badge badge-status">{note.status}</span>
           ) : null}
           <span className="note-updated">Updated: {note.updated}</span>

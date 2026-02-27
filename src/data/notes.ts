@@ -1,5 +1,5 @@
 export type NoteCategory = "guide" | "note" | "project" | "research";
-export type NoteStatus = string;
+export type NoteStatus = "subpage" | "";
 
 export type NoteMeta = {
   slug: string;
@@ -136,7 +136,11 @@ function toCategory(value: unknown): NoteCategory {
 }
 
 function toStatus(value: unknown): NoteStatus {
-  return toString(value, "");
+  const raw = toString(value, "");
+  if (raw === "subpage") {
+    return "subpage";
+  }
+  return "";
 }
 
 const slugToPaths = new Map<string, string[]>();

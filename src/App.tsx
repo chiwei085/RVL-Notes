@@ -13,7 +13,7 @@ function HomePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const categories: NoteCategory[] = ["guide", "note", "project", "research"];
-  const baseNotes = notes;
+  const baseNotes = notes.filter((note) => note.status !== "subpage");
   const categoryCounts = baseNotes.reduce(
     (acc, note) => {
       acc[note.category] = (acc[note.category] ?? 0) + 1;
