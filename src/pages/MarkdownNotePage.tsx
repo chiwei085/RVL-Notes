@@ -12,7 +12,11 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
-import { createHeadingPlugin, type TocItem } from "../markdown/plugins";
+import {
+  createHeadingPlugin,
+  createObsidianLinkPlugin,
+  type TocItem,
+} from "../markdown/plugins";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
 
@@ -44,7 +48,10 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     const params = new URLSearchParams(location.search);
     return params.get("section");
   }, [location.search]);
-  const remarkPlugins = useMemo(() => [remarkGfm, createHeadingPlugin()], []);
+  const remarkPlugins = useMemo(
+    () => [remarkGfm, createHeadingPlugin(), createObsidianLinkPlugin()],
+    []
+  );
 
   const scrollToHeading = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
