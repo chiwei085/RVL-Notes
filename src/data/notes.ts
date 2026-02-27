@@ -1,3 +1,5 @@
+import generatedUpdated from "./generated-updated.json";
+
 export type NoteCategory = "guide" | "note" | "project" | "research";
 export type NoteStatus = "subpage" | "";
 
@@ -143,6 +145,8 @@ function toStatus(value: unknown): NoteStatus {
   return "";
 }
 
+const updatedMap = generatedUpdated as Record<string, string>;
+
 const slugToPaths = new Map<string, string[]>();
 Object.keys(rawNotes).forEach((path) => {
   const slug = path.split("/").pop()?.replace(/\.md$/, "") ?? path;
@@ -165,6 +169,8 @@ if (duplicateSlugs.length > 0) {
 const parsedNotes: ParsedNote[] = Object.entries(rawNotes).map(([path, raw]) => {
   const slug = path.split("/").pop()?.replace(/\.md$/, "") ?? path;
   const { frontmatter, content } = parseMarkdown(raw ?? "");
+  const fallbackUpdated = updatedMap[slug] ?? "";
+  const fmUpdated = toString(frontmatter.updated, "").trim();
   const meta: NoteMeta = {
     slug,
     title: toString(frontmatter.title, slug),
@@ -172,7 +178,7 @@ const parsedNotes: ParsedNote[] = Object.entries(rawNotes).map(([path, raw]) => 
     category: toCategory(frontmatter.category),
     tags: toTags(frontmatter.tags),
     status: toStatus(frontmatter.status),
-    updated: toString(frontmatter.updated, ""),
+    updated: fmUpdated || fallbackUpdated,
   };
   return { meta, content };
 });

@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "bun run gen-updated && vite",
+    "build": "bun run gen-updated && tsc -b && vite build",
+    "gen-updated": "bun scripts/gen-updated.ts",
     "lint": "eslint .",
+    "new-note": "bun scripts/new-note.ts",
     "preview": "vite preview"
   },
   "dependencies": {
