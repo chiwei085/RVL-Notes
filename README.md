@@ -145,7 +145,9 @@ Press {{kbd:Ctrl + Shift + P}}
 - `width`: 寬度（px）
 - `aspect`: `16:9 | 4:3 | 1:1`（也支援容錯寫法 `16/4/1`）
 
-Demo video: [src/assets/test_md.mp4](src/assets/test_md.mp4)
+Demo:
+
+![Markdown syntax demo](https://meee.com.tw/jAJkGSq.gif)
 
 ## Scripts
 
