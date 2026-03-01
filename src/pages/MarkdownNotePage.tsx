@@ -1,4 +1,4 @@
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Options } from "react-markdown";
 import {
   useEffect,
   useMemo,
@@ -9,17 +9,26 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import type { Handler } from "mdast-util-to-hast";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import rehypeKatex from "rehype-katex";
+import Callout from "../components/Callout";
+import Embed from "../components/Embed";
+import Fold from "../components/Fold";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
 import {
+  createCalloutPlugin,
+  createFoldPlugin,
   createHeadingPlugin,
+  createHighlightPlugin,
   createObsidianLinkPlugin,
   type TocItem,
 } from "../markdown/plugins";
+import { createMicromarkSyntaxPlugin } from "../markdown/micromark";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
-
 type MarkdownNotePageProps = {
   slug: string;
 };
@@ -49,7 +58,71 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     return params.get("section");
   }, [location.search]);
   const remarkPlugins = useMemo(
-    () => [remarkGfm, createHeadingPlugin(), createObsidianLinkPlugin()],
+    () => [
+      createMicromarkSyntaxPlugin(),
+      remarkGfm,
+      remarkMath,
+
+      createCalloutPlugin(),
+      createFoldPlugin(),
+
+      createHighlightPlugin(),
+
+      createHeadingPlugin(),
+      createObsidianLinkPlugin(),
+    ],
+    []
+  );
+  const remarkRehypeOptions = useMemo<NonNullable<Options["remarkRehypeOptions"]>>(
+    () => ({
+      handlers: {
+        embed: ((_state: unknown, node: any) => ({
+          type: "element",
+          tagName: "rvl-embed",
+          properties: {
+            provider: node.provider,
+            id: node.id,
+            width: node.width,
+            aspect: node.aspect,
+          },
+          children: [],
+        })) as Handler,
+        callout: ((_state: any, node: any) => ({
+          type: "element",
+          tagName: "rvl-callout",
+          properties: { kind: node.kind, title: node.title },
+          children: _state.all(node),
+        })) as Handler,
+        fold: ((_state: any, node: any) => ({
+          type: "element",
+          tagName: "rvl-fold",
+          properties: { title: node.title },
+          children: _state.all(node),
+        })) as Handler,
+        highlight: ((_state: any, node: any) => ({
+          type: "element",
+          tagName: "mark",
+          properties: { className: "highlight" },
+          children: _state.all(node),
+        })) as Handler,
+        kbd: ((_state: any, node: any) => ({
+          type: "element",
+          tagName: "kbd",
+          properties: { className: "kbd" },
+          children: _state.all(node),
+        })) as Handler,
+        badge: ((_state: any, node: any) => ({
+          type: "element",
+          tagName: "span",
+          properties: { className: ["badge", "badge-inline"] },
+          children: _state.all(node),
+        })) as Handler,
+      } as any,
+    }),
+    []
+  );
+  const rehypePlugins = useMemo<NonNullable<Options["rehypePlugins"]>>(
+    () => [rehypeKatex],
     []
   );
 
@@ -253,9 +326,39 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         {hasContent ? (
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
+            remarkRehypeOptions={remarkRehypeOptions}
+            rehypePlugins={rehypePlugins}
             components={{
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
+              "rvl-callout"({ kind, title, children }: any) {
+                return (
+                  <Callout kind={String(kind)} title={title ? String(title) : undefined}>
+                    {children}
+                  </Callout>
+                );
+              },
+              "rvl-fold"({ title, children }: any) {
+                return <Fold title={title ? String(title) : undefined}>{children}</Fold>;
+              },
+              "rvl-embed"({ provider, id, width, aspect }: any) {
+                const p = String(provider);
+                const vid = String(id);
+                const widthValue = Number(width);
+                const aspectValue =
+                  aspect === "16:9" || aspect === "4:3" || aspect === "1:1"
+                    ? aspect
+                    : undefined;
+                if (p !== "youtube" && p !== "bilibili") return null;
+                return (
+                  <Embed
+                    provider={p}
+                    id={vid}
+                    width={Number.isFinite(widthValue) ? widthValue : undefined}
+                    aspect={aspectValue}
+                  />
+                );
+              },
               code({ className, children, ...rest }) {
                 const match = /language-(\w+)/.exec(className || "");
                 if (match) {
