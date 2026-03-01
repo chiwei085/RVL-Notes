@@ -1,6 +1,4 @@
-import type { Element } from "hast";
-import type { Root } from "mdast";
-import type { ComponentType } from "react";
+import type {} from "react";
 
 declare module "mdast" {
   interface RootContentMap {
@@ -19,8 +17,10 @@ declare module "hast" {
   }
 }
 
-declare module "react-markdown" {
-  interface Components {
-    "rvl-embed"?: ComponentType<any>;
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "rvl-embed": any;
+    }
   }
 }

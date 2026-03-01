@@ -1,6 +1,5 @@
 import type { Plugin } from "unified";
-import type { Root } from "mdast";
-import { visit } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
 
 import { directive } from "micromark-extension-directive";
 import { directiveFromMarkdown, directiveToMarkdown } from "mdast-util-directive";
@@ -33,7 +32,7 @@ function rewriteObsidianEmbedToDirective(markdown: string): string {
   return markdown.replace(/!\[\[([^\]\n]+)\]\]/g, (_full, inner) => `::embed[${inner}]`);
 }
 
-export function createEmbedPlugin(): Plugin<[], Root> {
+export function createEmbedPlugin(): Plugin<[], any> {
   return function attacher(this: any) {
     const data = this.data();
 
@@ -55,7 +54,7 @@ export function createEmbedPlugin(): Plugin<[], Root> {
     };
 
     return (tree) => {
-      visit(tree, (node: any, index: number | null, parent: any) => {
+      visit(tree, (node: any, index: number | undefined, parent: any) => {
         if (!parent || typeof index !== "number") return;
         if (node.type !== "leafDirective") return;
         if (node.name !== "embed") return;
@@ -72,7 +71,7 @@ export function createEmbedPlugin(): Plugin<[], Root> {
         };
 
         parent.children.splice(index, 1, embed);
-        return [visit.SKIP, index];
+        return [SKIP, index];
       });
     };
   };
