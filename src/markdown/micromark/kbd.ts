@@ -104,10 +104,40 @@ export function kbdFromMarkdown() {
       rvlKbd(token) {
         const raw = this.sliceSerialize(token);
         const match = KBD_RE.exec(raw);
-        const content = (match?.[1] || "").replace(/\s+/g, "");
+        const content = (match?.[1] || "").trim();
+        const compact = content.replace(/\s+/g, "");
+        const keys = compact
+          .split("+")
+          .map((item) => item.trim())
+          .filter(Boolean);
         const node = this.stack[this.stack.length - 1];
-        if (content) {
-          node.children = [{ type: "text", value: content }];
+        if (keys.length === 1) {
+          node.children = [{ type: "text", value: keys[0] }];
+          this.exit(token);
+          return;
+        }
+        if (keys.length > 1) {
+          node.children = [{ type: "text", value: keys.join("+") }];
+          this.exit(token);
+          const parent = this.stack[this.stack.length - 1];
+          if (parent && Array.isArray(parent.children) && parent.children.length > 0) {
+            const lastIndex = parent.children.length - 1;
+            const last = parent.children[lastIndex];
+            if (last && last.type === "kbd") {
+              const nodes = [];
+              keys.forEach((key, index) => {
+                nodes.push({
+                  type: "kbd",
+                  children: [{ type: "text", value: key }],
+                });
+                if (index < keys.length - 1) {
+                  nodes.push({ type: "text", value: "+" });
+                }
+              });
+              parent.children.splice(lastIndex, 1, ...nodes);
+            }
+          }
+          return;
         }
         this.exit(token);
       },
