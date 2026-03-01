@@ -14,8 +14,6 @@ import type { Handler } from "mdast-util-to-hast";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import Embed from "../components/Embed";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
 import {
@@ -26,29 +24,6 @@ import {
 import { createEmbedPlugin } from "../markdown/embed";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
-const sanitizeSchema: any = {
-  ...defaultSchema,
-  attributes: {
-    ...defaultSchema.attributes,
-    div: [...(defaultSchema.attributes?.div || []), "className", "style"],
-    span: [
-      ...(defaultSchema.attributes?.span || []),
-      "className",
-      "style",
-      "aria-hidden",
-    ],
-    code: [...(defaultSchema.attributes?.code || []), "className"],
-    pre: [...(defaultSchema.attributes?.pre || []), "className"],
-    a: [
-      ...(defaultSchema.attributes?.a || []),
-      "href",
-      "title",
-      "target",
-      "rel",
-    ],
-  },
-};
-
 type MarkdownNotePageProps = {
   slug: string;
 };
@@ -87,7 +62,6 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     ],
     []
   );
-  const allowHtml = true;
   const remarkRehypeOptions = useMemo<NonNullable<Options["remarkRehypeOptions"]>>(
     () => ({
       handlers: {
@@ -101,12 +75,10 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     }),
     []
   );
-  const rehypePlugins = useMemo<NonNullable<Options["rehypePlugins"]>>(() => {
-    if (!allowHtml) {
-      return [rehypeKatex];
-    }
-    return [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex];
-  }, [allowHtml]);
+  const rehypePlugins = useMemo<NonNullable<Options["rehypePlugins"]>>(
+    () => [rehypeKatex],
+    []
+  );
 
   const scrollToHeading = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
