@@ -9,8 +9,10 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import rehypeKatex from "rehype-katex";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
 import {
   createHeadingPlugin,
@@ -49,7 +51,7 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     return params.get("section");
   }, [location.search]);
   const remarkPlugins = useMemo(
-    () => [remarkGfm, createHeadingPlugin(), createObsidianLinkPlugin()],
+    () => [remarkGfm, remarkMath, createHeadingPlugin(), createObsidianLinkPlugin()],
     []
   );
 
@@ -253,6 +255,7 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         {hasContent ? (
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
+            rehypePlugins={[rehypeKatex]}
             components={{
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
