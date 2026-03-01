@@ -1,25 +1,33 @@
-// @ts-nocheck
 import { codes } from "micromark-util-symbol";
+import {
+  type Code,
+  consumeChar,
+  consumeLiteral,
+  consumeSingleLineBody,
+  isSpaceOrTab,
+  type Effects,
+  type FromMarkdownContext,
+  type State,
+} from "./shared";
 
 const EMBED_RE = /^!\[\[(youtube|bilibili):([^\]\s\r\n]+)(?:\s+([^\]\r\n]*))?\]\]$/;
-const Y_CODE = "y".charCodeAt(0);
-const O_CODE = "o".charCodeAt(0);
-const U_CODE = "u".charCodeAt(0);
-const T_CODE = "t".charCodeAt(0);
-const B_CODE = "b".charCodeAt(0);
-const E_CODE = "e".charCodeAt(0);
-const I_CODE = "i".charCodeAt(0);
-const L_CODE = "l".charCodeAt(0);
 
-function isWhitespace(code) {
-  return code === codes.space || code === codes.horizontalTab;
-}
+type EmbedProvider = "youtube" | "bilibili";
+type EmbedAspect = "16:9" | "4:3" | "1:1";
+type EmbedNode = {
+  type: "embed";
+  provider: EmbedProvider;
+  id: string;
+  width?: number;
+  aspect?: EmbedAspect;
+};
+type EmbedContext = FromMarkdownContext<EmbedNode>;
 
-function parseParams(spec) {
+function parseParams(spec: string): { width?: number; aspect?: EmbedAspect } {
   const parts = spec.trim().split(/\s+/).filter(Boolean);
-  const params = {};
+  const params: { width?: number; aspect?: EmbedAspect } = {};
 
-  const normalizeAspect = (value) => {
+  const normalizeAspect = (value: string): EmbedAspect | undefined => {
     if (value === "16:9" || value === "4:3" || value === "1:1") return value;
     if (value === "16") return "16:9";
     if (value === "4") return "4:3";
@@ -34,169 +42,68 @@ function parseParams(spec) {
 
     if (key === "width") {
       const width = Number(rawValue);
-      if (Number.isFinite(width) && width > 0) params.width = Math.round(width);
+      if (Number.isFinite(width) && width > 0) {
+        params.width = Math.round(width);
+      }
+      continue;
     }
 
     if (key === "aspect") {
       const aspect = normalizeAspect(rawValue);
-      if (aspect) params.aspect = aspect;
+      if (aspect) {
+        params.aspect = aspect;
+      }
     }
   }
 
   return params;
 }
 
-function isValidId(provider, id) {
+function isValidId(provider: EmbedProvider, id: string): boolean {
   if (provider === "youtube") {
     return /^[a-zA-Z0-9_-]{6,20}$/.test(id);
   }
   return /^BV[a-zA-Z0-9]{10}$/.test(id) || /^av\d{1,12}$/.test(id);
 }
 
-function tokenizeEmbed(effects, ok, nok) {
-  let hasId = false;
+function tokenizeEmbed(effects: Effects, ok: State, nok: State): State {
+  const idStart = consumeSingleLineBody(effects, nok, {
+    closingCode: codes.rightSquareBracket,
+    invalidStart: (code) => isSpaceOrTab(code) || code === codes.rightSquareBracket,
+    onClosed: closeSecond,
+  });
 
   return start;
 
-  function start(code) {
+  function start(code: Code): State | void {
     if (code !== codes.exclamationMark) return nok(code);
     effects.enter("rvlEmbed");
     effects.consume(code);
-    return open1;
+    return consumeChar(effects, codes.leftSquareBracket, open2, nok);
   }
 
-  function open1(code) {
-    if (code !== codes.leftSquareBracket) return nok(code);
-    effects.consume(code);
-    return open2;
+  function open2(code: Code): State | void {
+    return consumeChar(effects, codes.leftSquareBracket, providerStart, nok)(code);
   }
 
-  function open2(code) {
-    if (code !== codes.leftSquareBracket) return nok(code);
-    effects.consume(code);
-    return providerStart;
-  }
-
-  function providerStart(code) {
-    if (code === Y_CODE) {
+  function providerStart(code: Code): State | void {
+    if (code === "y".charCodeAt(0)) {
       effects.consume(code);
-      return pYou1;
+      return consumeLiteral(effects, "outube", providerDone, nok);
     }
-    if (code === B_CODE) {
+    if (code === "b".charCodeAt(0)) {
       effects.consume(code);
-      return pBi1;
+      return consumeLiteral(effects, "ilibili", providerDone, nok);
     }
     return nok(code);
   }
 
-  function pYou1(code) {
-    if (code !== O_CODE) return nok(code);
-    effects.consume(code);
-    return pYou2;
+  function providerDone(code: Code): State | void {
+    return consumeChar(effects, codes.colon, idStart, nok)(code);
   }
 
-  function pYou2(code) {
-    if (code !== U_CODE) return nok(code);
-    effects.consume(code);
-    return pYou3;
-  }
-
-  function pYou3(code) {
-    if (code !== T_CODE) return nok(code);
-    effects.consume(code);
-    return pYou4;
-  }
-
-  function pYou4(code) {
-    if (code !== U_CODE) return nok(code);
-    effects.consume(code);
-    return pYou5;
-  }
-
-  function pYou5(code) {
-    if (code !== B_CODE) return nok(code);
-    effects.consume(code);
-    return pYou6;
-  }
-
-  function pYou6(code) {
-    if (code !== E_CODE) return nok(code);
-    effects.consume(code);
-    return providerDone;
-  }
-
-  function pBi1(code) {
-    if (code !== I_CODE) return nok(code);
-    effects.consume(code);
-    return pBi2;
-  }
-
-  function pBi2(code) {
-    if (code !== L_CODE) return nok(code);
-    effects.consume(code);
-    return pBi3;
-  }
-
-  function pBi3(code) {
-    if (code !== I_CODE) return nok(code);
-    effects.consume(code);
-    return pBi4;
-  }
-
-  function pBi4(code) {
-    if (code !== B_CODE) return nok(code);
-    effects.consume(code);
-    return pBi5;
-  }
-
-  function pBi5(code) {
-    if (code !== I_CODE) return nok(code);
-    effects.consume(code);
-    return pBi6;
-  }
-
-  function pBi6(code) {
-    if (code !== L_CODE) return nok(code);
-    effects.consume(code);
-    return pBi7;
-  }
-
-  function pBi7(code) {
-    if (code !== I_CODE) return nok(code);
-    effects.consume(code);
-    return providerDone;
-  }
-
-  function providerDone(code) {
-    if (code !== codes.colon) return nok(code);
-    effects.consume(code);
-    return idStart;
-  }
-
-  function idStart(code) {
-    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
-      return nok(code);
-    }
-    if (isWhitespace(code) || code === codes.rightSquareBracket) return nok(code);
-    hasId = true;
-    effects.consume(code);
-    return body;
-  }
-
-  function body(code) {
-    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
-      return nok(code);
-    }
-    if (code === codes.rightSquareBracket) {
-      effects.consume(code);
-      return close;
-    }
-    effects.consume(code);
-    return body;
-  }
-
-  function close(code) {
-    if (code !== codes.rightSquareBracket || !hasId) return nok(code);
+  function closeSecond(code: Code): State | void {
+    if (code !== codes.rightSquareBracket) return nok(code);
     effects.consume(code);
     effects.exit("rvlEmbed");
     return ok;
@@ -216,18 +123,18 @@ export function embedSyntax() {
 export function embedFromMarkdown() {
   return {
     enter: {
-      rvlEmbed(token) {
+      rvlEmbed(this: EmbedContext, token: unknown) {
         this.enter({ type: "embed", provider: "youtube", id: "" }, token);
       },
     },
     exit: {
-      rvlEmbed(token) {
+      rvlEmbed(this: EmbedContext, token: unknown) {
         const raw = this.sliceSerialize(token);
         const match = EMBED_RE.exec(raw);
-        const node = this.stack[this.stack.length - 1];
+        const node = this.stack[this.stack.length - 1] as EmbedNode;
 
         if (match) {
-          const provider = match[1];
+          const provider = match[1] as EmbedProvider;
           const id = match[2];
           const paramsSpec = match[3] || "";
 

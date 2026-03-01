@@ -33,6 +33,27 @@ type MarkdownNotePageProps = {
   slug: string;
 };
 
+type RehypeState = {
+  all: (node: unknown) => unknown[];
+};
+
+type RehypeNode = {
+  children?: unknown[];
+  [key: string]: unknown;
+};
+
+const elementHandler = (
+  tagName: string,
+  getProperties: (node: RehypeNode) => Record<string, unknown>,
+  includeChildren = true
+): Handler =>
+  ((state: RehypeState, node: RehypeNode) => ({
+    type: "element",
+    tagName,
+    properties: getProperties(node),
+    children: includeChildren ? state.all(node) : [],
+  })) as Handler;
+
 export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
   const note = getNoteBySlug(slug);
   const content = getNoteContentBySlug(slug);
@@ -57,7 +78,7 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     const params = new URLSearchParams(location.search);
     return params.get("section");
   }, [location.search]);
-  const remarkPlugins = useMemo(
+  const markdownPlugins = useMemo<NonNullable<Options["remarkPlugins"]>>(
     () => [
       createMicromarkSyntaxPlugin(),
       remarkGfm,
@@ -76,48 +97,27 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
   const remarkRehypeOptions = useMemo<NonNullable<Options["remarkRehypeOptions"]>>(
     () => ({
       handlers: {
-        embed: ((_state: unknown, node: any) => ({
-          type: "element",
-          tagName: "rvl-embed",
-          properties: {
+        embed: elementHandler(
+          "rvl-embed",
+          (node) => ({
             provider: node.provider,
             id: node.id,
             width: node.width,
             aspect: node.aspect,
-          },
-          children: [],
-        })) as Handler,
-        callout: ((_state: any, node: any) => ({
-          type: "element",
-          tagName: "rvl-callout",
-          properties: { kind: node.kind, title: node.title },
-          children: _state.all(node),
-        })) as Handler,
-        fold: ((_state: any, node: any) => ({
-          type: "element",
-          tagName: "rvl-fold",
-          properties: { title: node.title },
-          children: _state.all(node),
-        })) as Handler,
-        highlight: ((_state: any, node: any) => ({
-          type: "element",
-          tagName: "mark",
-          properties: { className: "highlight" },
-          children: _state.all(node),
-        })) as Handler,
-        kbd: ((_state: any, node: any) => ({
-          type: "element",
-          tagName: "kbd",
-          properties: { className: "kbd" },
-          children: _state.all(node),
-        })) as Handler,
-        badge: ((_state: any, node: any) => ({
-          type: "element",
-          tagName: "span",
-          properties: { className: ["badge", "badge-inline"] },
-          children: _state.all(node),
-        })) as Handler,
-      } as any,
+          }),
+          false
+        ),
+        callout: elementHandler("rvl-callout", (node) => ({
+          kind: node.kind,
+          title: node.title,
+        })),
+        fold: elementHandler("rvl-fold", (node) => ({
+          title: node.title,
+        })),
+        highlight: elementHandler("mark", () => ({ className: "highlight" })),
+        kbd: elementHandler("kbd", () => ({ className: "kbd" })),
+        badge: elementHandler("span", () => ({ className: ["badge", "badge-inline"] })),
+      },
     }),
     []
   );
@@ -325,7 +325,7 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
       <article className="markdown-body">
         {hasContent ? (
           <ReactMarkdown
-            remarkPlugins={remarkPlugins}
+            remarkPlugins={markdownPlugins}
             remarkRehypeOptions={remarkRehypeOptions}
             rehypePlugins={rehypePlugins}
             components={{
