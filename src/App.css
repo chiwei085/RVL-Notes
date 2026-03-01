@@ -282,46 +282,88 @@ button {
   margin-left: 0;
 }
 
+.markdown-body {
+  --callout-radius: 12px;
+  --callout-border: rgba(148, 163, 184, 0.22);
+  --callout-bg: rgba(15, 23, 42, 0.7);
+  --callout-title: #e6edf3;
+  --callout-text: #d0d9e5;
+  --callout-icon: #d0d9e5;
+}
+
 .callout {
+  --callout-accent: #3b82f6;
+  --callout-accent-bg: rgba(59, 130, 246, 0.12);
   margin: 1em 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #0f172a;
-  border: 1px solid #1f2a3a;
-  border-left: 4px solid var(--callout-color, #60a5fa);
+  border-radius: var(--callout-radius);
+  border: 1px solid var(--callout-border);
+  border-left: 4px solid var(--callout-accent);
+  background: linear-gradient(0deg, var(--callout-bg), var(--callout-bg)),
+    linear-gradient(0deg, var(--callout-accent-bg), var(--callout-accent-bg));
+  color: var(--callout-text);
+  overflow: hidden;
 }
 
-.callout-title {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #e2e8f0;
+.callout__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
-.callout-content > :first-child {
+.callout__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--callout-accent);
+  background: color-mix(in srgb, var(--callout-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 34%, transparent);
+  flex-shrink: 0;
+}
+
+.callout__title {
+  color: var(--callout-title);
+  font-size: 0.93rem;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
+.callout__body {
+  padding: 8px 14px 12px;
+}
+
+.callout__body > :first-child {
   margin-top: 0;
 }
 
-.callout-content > :last-child {
+.callout__body > :last-child {
   margin-bottom: 0;
 }
 
-.callout[data-kind="note"],
-.callout[data-kind="info"] {
-  --callout-color: #60a5fa;
+.callout--note {
+  --callout-accent: #4f9cff;
+  --callout-accent-bg: rgba(79, 156, 255, 0.1);
 }
 
-.callout[data-kind="tip"],
-.callout[data-kind="success"] {
-  --callout-color: #34d399;
+.callout--tip {
+  --callout-accent: #3fb950;
+  --callout-accent-bg: rgba(63, 185, 80, 0.1);
 }
 
-.callout[data-kind="warning"] {
-  --callout-color: #fbbf24;
+.callout--warning {
+  --callout-accent: #d29922;
+  --callout-accent-bg: rgba(210, 153, 34, 0.12);
 }
 
-.callout[data-kind="danger"],
-.callout[data-kind="error"] {
-  --callout-color: #f87171;
+.callout--danger {
+  --callout-accent: #f85149;
+  --callout-accent-bg: rgba(248, 81, 73, 0.11);
 }
 
 .markdown-body mark.highlight {
