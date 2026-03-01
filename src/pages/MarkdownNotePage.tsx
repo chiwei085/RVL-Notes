@@ -13,6 +13,8 @@ import remarkMath from "remark-math";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
 import {
   createHeadingPlugin,
@@ -21,6 +23,28 @@ import {
 } from "../markdown/plugins";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    div: [...(defaultSchema.attributes?.div || []), "className", "style"],
+    span: [
+      ...(defaultSchema.attributes?.span || []),
+      "className",
+      "style",
+      "aria-hidden",
+    ],
+    code: [...(defaultSchema.attributes?.code || []), "className"],
+    pre: [...(defaultSchema.attributes?.pre || []), "className"],
+    a: [
+      ...(defaultSchema.attributes?.a || []),
+      "href",
+      "title",
+      "target",
+      "rel",
+    ],
+  },
+};
 
 type MarkdownNotePageProps = {
   slug: string;
@@ -255,7 +279,11 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         {hasContent ? (
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
-            rehypePlugins={[rehypeKatex]}
+            rehypePlugins={[
+              rehypeRaw,
+              [rehypeSanitize, sanitizeSchema],
+              rehypeKatex,
+            ]}
             components={{
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
