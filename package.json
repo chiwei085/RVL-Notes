@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "katex": "^0.16.33",
+    "mdast-util-directive": "^3.1.0",
+    "micromark-extension-directive": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -23,7 +25,8 @@
     "rehype-sanitize": "^6.0.0",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
