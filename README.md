@@ -73,6 +73,80 @@ content/
 
 - 文章內標題 hover 會出現 🔗，可複製 `/#/note/<slug>?section=<headingId>`
 
+## Markdown Syntax Support
+
+### KaTeX
+
+```md
+Inline: $E=mc^2$
+
+$$
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+$$
+```
+
+### Callout
+
+支援 `note/info`、`tip/success`、`warning`、`danger/error`。
+
+```md
+> [!note]
+> 這是 note（無標題）
+
+> [!tip] Quick Tip
+> 這是 tip（有標題）
+
+> [!warning]
+> 請先確認設定
+
+> [!danger] 注意
+> 這是高風險操作
+```
+
+### Highlight
+
+```md
+==highlight==
+```
+
+### KBD
+
+語法 `{{kbd:Ctrl+Shift+P}}` 會渲染成多顆按鍵 + 分隔符。
+
+```md
+Press {{kbd:Ctrl+Shift+P}}
+Press {{kbd:Ctrl + Shift + P}}
+```
+
+### Badge
+
+```md
+{{badge:WIP}} {{badge:ROS2}}
+```
+
+### Fold
+
+```md
+:::fold[更多細節]
+這裡可以放一般 markdown（清單、程式碼、連結等）
+:::
+```
+
+### Embed
+
+支援 YouTube / BiliBili：
+
+```md
+![[youtube:J7Xzgcu6vVk width=720 aspect=16:9]]
+![[bilibili:BV1MAZqBFEf3 width=640 aspect=16:9]]
+![[bilibili:av123]]
+```
+
+- `width`: 寬度（px）
+- `aspect`: `16:9 | 4:3 | 1:1`（也支援容錯寫法 `16/4/1`）
+
+Demo video: [src/assets/test_md.mp4](src/assets/test_md.mp4)
+
 ## Scripts
 
 - `bun run dev` 開發模式
