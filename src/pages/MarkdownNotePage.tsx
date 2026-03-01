@@ -15,6 +15,7 @@ import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import Embed from "../components/Embed";
 import { getNoteBySlug, getNoteContentBySlug } from "../data/notes";
 import {
   createHeadingPlugin,
@@ -314,11 +315,10 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
               "rvl-embed"({ provider, id }: any) {
-                return (
-                  <div className="embed-placeholder">
-                    embed: {String(provider)} / {String(id)}
-                  </div>
-                );
+                const p = String(provider);
+                const vid = String(id);
+                if (p !== "youtube" && p !== "bilibili") return null;
+                return <Embed provider={p} id={vid} />;
               },
               code({ className, children, ...rest }) {
                 const match = /language-(\w+)/.exec(className || "");
