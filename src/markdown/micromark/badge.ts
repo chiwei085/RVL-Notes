@@ -1,96 +1,46 @@
-// @ts-nocheck
 import { codes } from "micromark-util-symbol";
+import {
+  type Code,
+  consumeChar,
+  consumeLiteral,
+  consumeSingleLineBody,
+  type Effects,
+  type FromMarkdownContext,
+  type State,
+} from "./shared";
 
 const BADGE_RE = /^\{\{badge:([^}\r\n]+)\}\}$/;
 
-const B_CODE = "b".charCodeAt(0);
-const A_CODE = "a".charCodeAt(0);
-const D_CODE = "d".charCodeAt(0);
-const G_CODE = "g".charCodeAt(0);
-const E_CODE = "e".charCodeAt(0);
+type TextNode = { type: "text"; value: string };
+type BadgeNode = { type: "badge"; children: TextNode[] };
+type BadgeContext = FromMarkdownContext<BadgeNode>;
 
-function tokenizeBadge(effects, ok, nok) {
-  let hasBody = false;
+function tokenizeBadge(effects: Effects, ok: State, nok: State): State {
+  const bodyStart = consumeSingleLineBody(effects, nok, {
+    closingCode: codes.rightCurlyBrace,
+    invalidStart: (code) => code === codes.rightCurlyBrace,
+    onClosed: closeSecond,
+  });
 
   return start;
 
-  function start(code) {
+  function start(code: Code): State | void {
     if (code !== codes.leftCurlyBrace) return nok(code);
     effects.enter("rvlBadge");
     effects.consume(code);
-    return openSecond;
+    return consumeChar(effects, codes.leftCurlyBrace, keywordStart, nok);
   }
 
-  function openSecond(code) {
-    if (code !== codes.leftCurlyBrace) return nok(code);
-    effects.consume(code);
-    return b1;
+  function keywordStart(code: Code): State | void {
+    return consumeLiteral(effects, "badge", colon, nok)(code);
   }
 
-  function b1(code) {
-    if (code !== B_CODE) return nok(code);
-    effects.consume(code);
-    return a;
+  function colon(code: Code): State | void {
+    return consumeChar(effects, codes.colon, bodyStart, nok)(code);
   }
 
-  function a(code) {
-    if (code !== A_CODE) return nok(code);
-    effects.consume(code);
-    return d;
-  }
-
-  function d(code) {
-    if (code !== D_CODE) return nok(code);
-    effects.consume(code);
-    return g;
-  }
-
-  function g(code) {
-    if (code !== G_CODE) return nok(code);
-    effects.consume(code);
-    return e;
-  }
-
-  function e(code) {
-    if (code !== E_CODE) return nok(code);
-    effects.consume(code);
-    return colon;
-  }
-
-  function colon(code) {
-    if (code !== codes.colon) return nok(code);
-    effects.consume(code);
-    return bodyStart;
-  }
-
-  function bodyStart(code) {
-    if (
-      code === codes.eof ||
-      code === codes.lineFeed ||
-      code === codes.carriageReturn ||
-      code === codes.rightCurlyBrace
-    ) {
-      return nok(code);
-    }
-    hasBody = true;
-    effects.consume(code);
-    return body;
-  }
-
-  function body(code) {
-    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
-      return nok(code);
-    }
-    if (code === codes.rightCurlyBrace) {
-      effects.consume(code);
-      return closeSecond;
-    }
-    effects.consume(code);
-    return body;
-  }
-
-  function closeSecond(code) {
-    if (code !== codes.rightCurlyBrace || !hasBody) return nok(code);
+  function closeSecond(code: Code): State | void {
+    if (code !== codes.rightCurlyBrace) return nok(code);
     effects.consume(code);
     effects.exit("rvlBadge");
     return ok;
@@ -110,16 +60,16 @@ export function badgeSyntax() {
 export function badgeFromMarkdown() {
   return {
     enter: {
-      rvlBadge(token) {
+      rvlBadge(this: BadgeContext, token: unknown) {
         this.enter({ type: "badge", children: [] }, token);
       },
     },
     exit: {
-      rvlBadge(token) {
+      rvlBadge(this: BadgeContext, token: unknown) {
         const raw = this.sliceSerialize(token);
         const match = BADGE_RE.exec(raw);
         const content = (match?.[1] || "").trim();
-        const node = this.stack[this.stack.length - 1];
+        const node = this.stack[this.stack.length - 1] as BadgeNode;
         if (content) {
           node.children = [{ type: "text", value: content }];
         }

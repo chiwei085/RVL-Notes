@@ -12,6 +12,7 @@ Git 是一個分散式版本控制系統 (DVCS, Distributed Version Control Syst
 
 重要觀念：
 
+> [!note]
 > Git 不是同步資料夾  
 > 它同步的是 **物件 (objects)** 與 **參照 (ref)**
 
@@ -85,6 +86,7 @@ Git 的日常操作可以用三個區域理解：
 - `git commit`：Index -> Repository (生成 commit)
 - `git restore` / `git checkout`：把內容從某個 commit/tree 還原到工作目錄/暫存區
 
+> [!note]
 > commit 不是把現在資料夾打包；commit 是把 **Index 裡的內容** 固化成新 commit。
 
 ## 分支 (branch) 其實只是參照

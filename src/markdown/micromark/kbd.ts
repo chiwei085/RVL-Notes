@@ -1,82 +1,48 @@
-// @ts-nocheck
 import { codes } from "micromark-util-symbol";
+import {
+  type Code,
+  consumeChar,
+  consumeLiteral,
+  consumeSingleLineBody,
+  type Effects,
+  type FromMarkdownContext,
+  type State,
+} from "./shared";
 
 const KBD_RE = /^\{\{kbd:([^}\r\n]+)\}\}$/;
 
-const K_CODE = "k".charCodeAt(0);
-const B_CODE = "b".charCodeAt(0);
-const D_CODE = "d".charCodeAt(0);
+type TextNode = { type: "text"; value: string };
+type KbdNode = { type: "kbd"; children: TextNode[] };
+type ParentNode = { children?: Array<KbdNode | TextNode | unknown> };
+type KbdStackNode = KbdNode | ParentNode;
+type KbdContext = FromMarkdownContext<KbdStackNode>;
 
-function tokenizeKbd(effects, ok, nok) {
-  let hasBody = false;
+function tokenizeKbd(effects: Effects, ok: State, nok: State): State {
+  const bodyStart = consumeSingleLineBody(effects, nok, {
+    closingCode: codes.rightCurlyBrace,
+    invalidStart: (code) => code === codes.rightCurlyBrace,
+    onClosed: closeSecond,
+  });
 
   return start;
 
-  function start(code) {
+  function start(code: Code): State | void {
     if (code !== codes.leftCurlyBrace) return nok(code);
     effects.enter("rvlKbd");
     effects.consume(code);
-    return openSecond;
+    return consumeChar(effects, codes.leftCurlyBrace, keywordStart, nok);
   }
 
-  function openSecond(code) {
-    if (code !== codes.leftCurlyBrace) return nok(code);
-    effects.consume(code);
-    return k;
+  function keywordStart(code: Code): State | void {
+    return consumeLiteral(effects, "kbd", colon, nok)(code);
   }
 
-  function k(code) {
-    if (code !== K_CODE) return nok(code);
-    effects.consume(code);
-    return b;
+  function colon(code: Code): State | void {
+    return consumeChar(effects, codes.colon, bodyStart, nok)(code);
   }
 
-  function b(code) {
-    if (code !== B_CODE) return nok(code);
-    effects.consume(code);
-    return d;
-  }
-
-  function d(code) {
-    if (code !== D_CODE) return nok(code);
-    effects.consume(code);
-    return colon;
-  }
-
-  function colon(code) {
-    if (code !== codes.colon) return nok(code);
-    effects.consume(code);
-    return bodyStart;
-  }
-
-  function bodyStart(code) {
-    if (
-      code === codes.eof ||
-      code === codes.lineFeed ||
-      code === codes.carriageReturn ||
-      code === codes.rightCurlyBrace
-    ) {
-      return nok(code);
-    }
-    hasBody = true;
-    effects.consume(code);
-    return body;
-  }
-
-  function body(code) {
-    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
-      return nok(code);
-    }
-    if (code === codes.rightCurlyBrace) {
-      effects.consume(code);
-      return closeSecond;
-    }
-    effects.consume(code);
-    return body;
-  }
-
-  function closeSecond(code) {
-    if (code !== codes.rightCurlyBrace || !hasBody) return nok(code);
+  function closeSecond(code: Code): State | void {
+    if (code !== codes.rightCurlyBrace) return nok(code);
     effects.consume(code);
     effects.exit("rvlKbd");
     return ok;
@@ -96,12 +62,12 @@ export function kbdSyntax() {
 export function kbdFromMarkdown() {
   return {
     enter: {
-      rvlKbd(token) {
+      rvlKbd(this: KbdContext, token: unknown) {
         this.enter({ type: "kbd", children: [] }, token);
       },
     },
     exit: {
-      rvlKbd(token) {
+      rvlKbd(this: KbdContext, token: unknown) {
         const raw = this.sliceSerialize(token);
         const match = KBD_RE.exec(raw);
         const content = (match?.[1] || "").trim();
@@ -110,35 +76,43 @@ export function kbdFromMarkdown() {
           .split("+")
           .map((item) => item.trim())
           .filter(Boolean);
-        const node = this.stack[this.stack.length - 1];
+
+        const node = this.stack[this.stack.length - 1] as KbdNode;
         if (keys.length === 1) {
           node.children = [{ type: "text", value: keys[0] }];
           this.exit(token);
           return;
         }
+
         if (keys.length > 1) {
           node.children = [{ type: "text", value: keys.join("+") }];
           this.exit(token);
-          const parent = this.stack[this.stack.length - 1];
-          if (parent && Array.isArray(parent.children) && parent.children.length > 0) {
-            const lastIndex = parent.children.length - 1;
-            const last = parent.children[lastIndex];
-            if (last && last.type === "kbd") {
-              const nodes = [];
-              keys.forEach((key, index) => {
-                nodes.push({
-                  type: "kbd",
-                  children: [{ type: "text", value: key }],
-                });
-                if (index < keys.length - 1) {
-                  nodes.push({ type: "text", value: "+" });
-                }
-              });
-              parent.children.splice(lastIndex, 1, ...nodes);
-            }
+
+          const parent = this.stack[this.stack.length - 1] as ParentNode | undefined;
+          if (!parent || !Array.isArray(parent.children) || parent.children.length === 0) {
+            return;
           }
+
+          const lastIndex = parent.children.length - 1;
+          const last = parent.children[lastIndex] as KbdNode | TextNode | undefined;
+          if (!last || (last as KbdNode).type !== "kbd") {
+            return;
+          }
+
+          const nodes: Array<KbdNode | TextNode> = [];
+          keys.forEach((key, index) => {
+            nodes.push({
+              type: "kbd",
+              children: [{ type: "text", value: key }],
+            });
+            if (index < keys.length - 1) {
+              nodes.push({ type: "text", value: "+" });
+            }
+          });
+          parent.children.splice(lastIndex, 1, ...nodes);
           return;
         }
+
         this.exit(token);
       },
     },
