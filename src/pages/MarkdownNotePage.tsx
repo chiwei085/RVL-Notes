@@ -10,6 +10,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import type { Handler } from "mdast-util-to-hast";
 import { Prism as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeKatex from "rehype-katex";
@@ -22,7 +23,7 @@ import {
   createObsidianLinkPlugin,
   type TocItem,
 } from "../markdown/plugins";
-import { createEmbedPlugin } from "../markdown/plugins/embed";
+import { createEmbedPlugin } from "../markdown/embed";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
 const sanitizeSchema: any = {
@@ -90,15 +91,13 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
   const remarkRehypeOptions = useMemo<NonNullable<Options["remarkRehypeOptions"]>>(
     () => ({
       handlers: {
-        embed(_state, node: any) {
-          return {
-            type: "element",
-            tagName: "rvl-embed",
-            properties: { provider: node.provider, id: node.id },
-            children: [],
-          };
-        },
-      },
+        embed: ((_state: unknown, node: any) => ({
+          type: "element",
+          tagName: "rvl-embed",
+          properties: { provider: node.provider, id: node.id },
+          children: [],
+        })) as Handler,
+      } as any,
     }),
     []
   );
