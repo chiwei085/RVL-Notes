@@ -1,7 +1,15 @@
 // @ts-nocheck
 import { codes } from "micromark-util-symbol";
 
-const EMBED_RE = /^!\[\[(youtube|bilibili):([^\]\s]+)([^\]]*)\]\]$/s;
+const EMBED_RE = /^!\[\[(youtube|bilibili):([^\]\s\r\n]+)(?:\s+([^\]\r\n]*))?\]\]$/;
+const Y_CODE = "y".charCodeAt(0);
+const O_CODE = "o".charCodeAt(0);
+const U_CODE = "u".charCodeAt(0);
+const T_CODE = "t".charCodeAt(0);
+const B_CODE = "b".charCodeAt(0);
+const E_CODE = "e".charCodeAt(0);
+const I_CODE = "i".charCodeAt(0);
+const L_CODE = "l".charCodeAt(0);
 
 function isWhitespace(code) {
   return code === codes.space || code === codes.horizontalTab;
@@ -46,10 +54,6 @@ function isValidId(provider, id) {
 }
 
 function tokenizeEmbed(effects, ok, nok) {
-  return effects.attempt({ tokenize: tokenizeEmbedAttempt }, ok, nok);
-}
-
-function tokenizeEmbedAttempt(effects, ok, nok) {
   let hasId = false;
 
   return start;
@@ -70,48 +74,125 @@ function tokenizeEmbedAttempt(effects, ok, nok) {
   function open2(code) {
     if (code !== codes.leftSquareBracket) return nok(code);
     effects.consume(code);
-    return provider;
+    return providerStart;
   }
 
-  function provider(code) {
-    if (code === codes.eof || isWhitespace(code) || code === codes.rightSquareBracket) {
-      return nok(code);
-    }
-    if (code === codes.colon) {
+  function providerStart(code) {
+    if (code === Y_CODE) {
       effects.consume(code);
-      return id;
+      return pYou1;
     }
-    effects.consume(code);
-    return provider;
+    if (code === B_CODE) {
+      effects.consume(code);
+      return pBi1;
+    }
+    return nok(code);
   }
 
-  function id(code) {
+  function pYou1(code) {
+    if (code !== O_CODE) return nok(code);
+    effects.consume(code);
+    return pYou2;
+  }
+
+  function pYou2(code) {
+    if (code !== U_CODE) return nok(code);
+    effects.consume(code);
+    return pYou3;
+  }
+
+  function pYou3(code) {
+    if (code !== T_CODE) return nok(code);
+    effects.consume(code);
+    return pYou4;
+  }
+
+  function pYou4(code) {
+    if (code !== U_CODE) return nok(code);
+    effects.consume(code);
+    return pYou5;
+  }
+
+  function pYou5(code) {
+    if (code !== B_CODE) return nok(code);
+    effects.consume(code);
+    return pYou6;
+  }
+
+  function pYou6(code) {
+    if (code !== E_CODE) return nok(code);
+    effects.consume(code);
+    return providerDone;
+  }
+
+  function pBi1(code) {
+    if (code !== I_CODE) return nok(code);
+    effects.consume(code);
+    return pBi2;
+  }
+
+  function pBi2(code) {
+    if (code !== L_CODE) return nok(code);
+    effects.consume(code);
+    return pBi3;
+  }
+
+  function pBi3(code) {
+    if (code !== I_CODE) return nok(code);
+    effects.consume(code);
+    return pBi4;
+  }
+
+  function pBi4(code) {
+    if (code !== B_CODE) return nok(code);
+    effects.consume(code);
+    return pBi5;
+  }
+
+  function pBi5(code) {
+    if (code !== I_CODE) return nok(code);
+    effects.consume(code);
+    return pBi6;
+  }
+
+  function pBi6(code) {
+    if (code !== L_CODE) return nok(code);
+    effects.consume(code);
+    return pBi7;
+  }
+
+  function pBi7(code) {
+    if (code !== I_CODE) return nok(code);
+    effects.consume(code);
+    return providerDone;
+  }
+
+  function providerDone(code) {
+    if (code !== codes.colon) return nok(code);
+    effects.consume(code);
+    return idStart;
+  }
+
+  function idStart(code) {
     if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
       return nok(code);
     }
-    if (code === codes.rightSquareBracket) return maybeClose;
-    if (!isWhitespace(code)) hasId = true;
+    if (isWhitespace(code) || code === codes.rightSquareBracket) return nok(code);
+    hasId = true;
     effects.consume(code);
-    return after;
+    return body;
   }
 
-  function after(code) {
+  function body(code) {
     if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
       return nok(code);
     }
-    if (code === codes.rightSquareBracket) return maybeClose;
-    effects.consume(code);
-    return after;
-  }
-
-  function maybeClose(code) {
-    if (code !== codes.rightSquareBracket) {
+    if (code === codes.rightSquareBracket) {
       effects.consume(code);
-      return after;
+      return close;
     }
-
     effects.consume(code);
-    return close;
+    return body;
   }
 
   function close(code) {

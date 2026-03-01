@@ -1,18 +1,14 @@
 // @ts-nocheck
 import { codes } from "micromark-util-symbol";
 
-const KBD_RE = /^\{\{kbd\s*[:+ ]\s*([^}]+)\}\}$/s;
+const KBD_RE = /^\{\{kbd:([^}\r\n]+)\}\}$/;
 
-function isWhitespace(code) {
-  return code === codes.space || code === codes.horizontalTab;
-}
+const K_CODE = "k".charCodeAt(0);
+const B_CODE = "b".charCodeAt(0);
+const D_CODE = "d".charCodeAt(0);
 
 function tokenizeKbd(effects, ok, nok) {
-  return effects.attempt({ tokenize: tokenizeKbdAttempt }, ok, nok);
-}
-
-function tokenizeKbdAttempt(effects, ok, nok) {
-  let hasContent = false;
+  let hasBody = false;
 
   return start;
 
@@ -30,71 +26,57 @@ function tokenizeKbdAttempt(effects, ok, nok) {
   }
 
   function k(code) {
-    if (code !== 107) return nok(code);
+    if (code !== K_CODE) return nok(code);
     effects.consume(code);
     return b;
   }
 
   function b(code) {
-    if (code !== 98) return nok(code);
+    if (code !== B_CODE) return nok(code);
     effects.consume(code);
     return d;
   }
 
   function d(code) {
-    if (code !== 100) return nok(code);
+    if (code !== D_CODE) return nok(code);
     effects.consume(code);
-    return beforeSep;
+    return colon;
   }
 
-  function beforeSep(code) {
-    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
-    if (isWhitespace(code)) {
-      effects.consume(code);
-      return beforeSep;
-    }
-    if (code === codes.colon || code === codes.plusSign || code === codes.space) {
-      effects.consume(code);
-      return afterSep;
-    }
-    return nok(code);
-  }
-
-  function afterSep(code) {
-    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
-    if (isWhitespace(code)) {
-      effects.consume(code);
-      return afterSep;
-    }
-    if (code === codes.eof || code === codes.rightCurlyBrace) return nok(code);
-    hasContent = true;
+  function colon(code) {
+    if (code !== codes.colon) return nok(code);
     effects.consume(code);
-    return content;
+    return bodyStart;
   }
 
-  function content(code) {
+  function bodyStart(code) {
+    if (
+      code === codes.eof ||
+      code === codes.lineFeed ||
+      code === codes.carriageReturn ||
+      code === codes.rightCurlyBrace
+    ) {
+      return nok(code);
+    }
+    hasBody = true;
+    effects.consume(code);
+    return body;
+  }
+
+  function body(code) {
     if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
       return nok(code);
     }
-    if (code === codes.rightCurlyBrace) return maybeClose;
-    if (!isWhitespace(code)) hasContent = true;
-    effects.consume(code);
-    return content;
-  }
-
-  function maybeClose(code) {
-    if (code !== codes.rightCurlyBrace) {
-      if (!isWhitespace(code)) hasContent = true;
+    if (code === codes.rightCurlyBrace) {
       effects.consume(code);
-      return content;
+      return closeSecond;
     }
-
     effects.consume(code);
-    return close;
+    return body;
   }
 
-  function close(code) {
-    if (code !== codes.rightCurlyBrace || !hasContent) return nok(code);
+  function closeSecond(code) {
+    if (code !== codes.rightCurlyBrace || !hasBody) return nok(code);
     effects.consume(code);
     effects.exit("rvlKbd");
     return ok;

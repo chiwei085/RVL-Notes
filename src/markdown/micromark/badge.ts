@@ -1,18 +1,16 @@
 // @ts-nocheck
 import { codes } from "micromark-util-symbol";
 
-const BADGE_RE = /^\{\{badge\s*[: ]\s*([^}]+)\}\}$/s;
+const BADGE_RE = /^\{\{badge:([^}\r\n]+)\}\}$/;
 
-function isWhitespace(code) {
-  return code === codes.space || code === codes.horizontalTab;
-}
+const B_CODE = "b".charCodeAt(0);
+const A_CODE = "a".charCodeAt(0);
+const D_CODE = "d".charCodeAt(0);
+const G_CODE = "g".charCodeAt(0);
+const E_CODE = "e".charCodeAt(0);
 
 function tokenizeBadge(effects, ok, nok) {
-  return effects.attempt({ tokenize: tokenizeBadgeAttempt }, ok, nok);
-}
-
-function tokenizeBadgeAttempt(effects, ok, nok) {
-  let hasContent = false;
+  let hasBody = false;
 
   return start;
 
@@ -30,83 +28,69 @@ function tokenizeBadgeAttempt(effects, ok, nok) {
   }
 
   function b1(code) {
-    if (code !== 98) return nok(code);
+    if (code !== B_CODE) return nok(code);
     effects.consume(code);
     return a;
   }
 
   function a(code) {
-    if (code !== 97) return nok(code);
+    if (code !== A_CODE) return nok(code);
     effects.consume(code);
     return d;
   }
 
   function d(code) {
-    if (code !== 100) return nok(code);
+    if (code !== D_CODE) return nok(code);
     effects.consume(code);
     return g;
   }
 
   function g(code) {
-    if (code !== 103) return nok(code);
+    if (code !== G_CODE) return nok(code);
     effects.consume(code);
     return e;
   }
 
   function e(code) {
-    if (code !== 101) return nok(code);
+    if (code !== E_CODE) return nok(code);
     effects.consume(code);
-    return beforeSep;
+    return colon;
   }
 
-  function beforeSep(code) {
-    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
-    if (isWhitespace(code)) {
-      effects.consume(code);
-      return beforeSep;
-    }
-    if (code === codes.colon || code === codes.space) {
-      effects.consume(code);
-      return afterSep;
-    }
-    return nok(code);
-  }
-
-  function afterSep(code) {
-    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
-    if (isWhitespace(code)) {
-      effects.consume(code);
-      return afterSep;
-    }
-    if (code === codes.eof || code === codes.rightCurlyBrace) return nok(code);
-    hasContent = true;
+  function colon(code) {
+    if (code !== codes.colon) return nok(code);
     effects.consume(code);
-    return content;
+    return bodyStart;
   }
 
-  function content(code) {
+  function bodyStart(code) {
+    if (
+      code === codes.eof ||
+      code === codes.lineFeed ||
+      code === codes.carriageReturn ||
+      code === codes.rightCurlyBrace
+    ) {
+      return nok(code);
+    }
+    hasBody = true;
+    effects.consume(code);
+    return body;
+  }
+
+  function body(code) {
     if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
       return nok(code);
     }
-    if (code === codes.rightCurlyBrace) return maybeClose;
-    if (!isWhitespace(code)) hasContent = true;
-    effects.consume(code);
-    return content;
-  }
-
-  function maybeClose(code) {
-    if (code !== codes.rightCurlyBrace) {
-      if (!isWhitespace(code)) hasContent = true;
+    if (code === codes.rightCurlyBrace) {
       effects.consume(code);
-      return content;
+      return closeSecond;
     }
-
     effects.consume(code);
-    return close;
+    return body;
   }
 
-  function close(code) {
-    if (code !== codes.rightCurlyBrace || !hasContent) return nok(code);
+  function closeSecond(code) {
+    if (code !== codes.rightCurlyBrace || !hasBody) return nok(code);
     effects.consume(code);
     effects.exit("rvlBadge");
     return ok;
