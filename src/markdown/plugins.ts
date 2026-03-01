@@ -134,3 +134,8 @@ export const createObsidianLinkPlugin = () => {
 };
 
 export * from "./embed";
+export * from "./callout";
+export * from "./highlight";
+export * from "./kbd";
+export * from "./badge";
+export * from "./fold";

@@ -6,6 +6,8 @@ export type EmbedProps = {
   provider: EmbedProvider;
   id: string;
   title?: string;
+  width?: number;
+  aspect?: "16:9" | "4:3" | "1:1";
 };
 
 function youtubeSrc(id: string) {
@@ -22,7 +24,7 @@ function bilibiliSrc(id: string) {
   return `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(id)}`;
 }
 
-export default function Embed({ provider, id, title }: EmbedProps) {
+export default function Embed({ provider, id, title, width, aspect }: EmbedProps) {
   const src = useMemo(() => {
     if (provider === "youtube") return youtubeSrc(id);
     return bilibiliSrc(id);
@@ -30,10 +32,13 @@ export default function Embed({ provider, id, title }: EmbedProps) {
 
   const safeTitle =
     title || (provider === "youtube" ? "YouTube video player" : "BiliBili player");
+  const containerStyle = width ? { maxWidth: `${width}px` } : undefined;
+  const paddingTop =
+    aspect === "4:3" ? "75%" : aspect === "1:1" ? "100%" : "56.25%";
 
   return (
-    <div className={`embed embed-${provider}`}>
-      <div className="embed-frame">
+    <div className={`embed embed-${provider}`} style={containerStyle}>
+      <div className="embed-frame" style={{ paddingTop }}>
         <iframe
           src={src}
           title={safeTitle}
