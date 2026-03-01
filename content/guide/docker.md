@@ -127,6 +127,7 @@ docker run --rm hello-world
 
 安全提醒：
 
+> [!warning]
 > `docker` 群組基本上等同於 root 級權限  
 > 如果你的環境是多使用者共用，請慎用
 
@@ -210,8 +211,7 @@ target/
 
 `dist/`、`target/` 是否忽略看你情境：若 build 都在容器內做，建議忽略它們，避免把本機產物塞進 image。
 
-小提醒：
-
+> [!note]
 > - 依賴先 COPY 再安裝，可提高快取命中
 > - 用 `WORKDIR` 固定工作目錄，避免在指令內到處 cd
 > - 開發中若要即時更新程式碼，通常搭配 bind mount
@@ -574,8 +574,7 @@ docker compose --profile dev up -d jupyter
 docker compose ps
 ```
 
-小提醒：
-
+> [!note]
 > profiles 不會改變相依性，只控制要不要啟動那個 service   
 > 例如 jupyter 如果需要 db，你可以在 jupyter 的 service 裡寫 `depends_on: [db]`  
 > 但 profiles 不會幫你自動推斷因為你開了 dev，所以 db 也要開；要靠 depends_on 或你啟動指令帶上對應服務
