@@ -1,4 +1,4 @@
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Options } from "react-markdown";
 import {
   useEffect,
   useMemo,
@@ -21,9 +21,10 @@ import {
   createObsidianLinkPlugin,
   type TocItem,
 } from "../markdown/plugins";
+import { createEmbedPlugin } from "../markdown/plugins/embed";
 
 const draculaStyle = dracula as unknown as SyntaxHighlighterProps["style"];
-const sanitizeSchema = {
+const sanitizeSchema: any = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
@@ -75,11 +76,32 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     return params.get("section");
   }, [location.search]);
   const remarkPlugins = useMemo(
-    () => [remarkGfm, remarkMath, createHeadingPlugin(), createObsidianLinkPlugin()],
+    () => [
+      remarkGfm,
+      remarkMath,
+      createHeadingPlugin(),
+      createObsidianLinkPlugin(),
+      createEmbedPlugin(),
+    ],
     []
   );
   const allowHtml = true;
-  const rehypePlugins = useMemo(() => {
+  const remarkRehypeOptions = useMemo<NonNullable<Options["remarkRehypeOptions"]>>(
+    () => ({
+      handlers: {
+        embed(_state, node: any) {
+          return {
+            type: "element",
+            tagName: "rvl-embed",
+            properties: { provider: node.provider, id: node.id },
+            children: [],
+          };
+        },
+      },
+    }),
+    []
+  );
+  const rehypePlugins = useMemo<NonNullable<Options["rehypePlugins"]>>(() => {
     if (!allowHtml) {
       return [rehypeKatex];
     }
@@ -286,10 +308,18 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         {hasContent ? (
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
+            remarkRehypeOptions={remarkRehypeOptions}
             rehypePlugins={rehypePlugins}
             components={{
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
+              "rvl-embed"({ provider, id }: any) {
+                return (
+                  <div className="embed-placeholder">
+                    embed: {String(provider)} / {String(id)}
+                  </div>
+                );
+              },
               code({ className, children, ...rest }) {
                 const match = /language-(\w+)/.exec(className || "");
                 if (match) {
