@@ -4,12 +4,7 @@ import { codes } from "micromark-util-symbol";
 const KBD_RE = /^\{\{kbd\s*[:+ ]\s*([^}]+)\}\}$/s;
 
 function isWhitespace(code) {
-  return (
-    code === codes.space ||
-    code === codes.horizontalTab ||
-    code === codes.lineFeed ||
-    code === codes.carriageReturn
-  );
+  return code === codes.space || code === codes.horizontalTab;
 }
 
 function tokenizeKbd(effects, ok, nok) {
@@ -53,6 +48,7 @@ function tokenizeKbdAttempt(effects, ok, nok) {
   }
 
   function beforeSep(code) {
+    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
     if (isWhitespace(code)) {
       effects.consume(code);
       return beforeSep;
@@ -65,6 +61,7 @@ function tokenizeKbdAttempt(effects, ok, nok) {
   }
 
   function afterSep(code) {
+    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
     if (isWhitespace(code)) {
       effects.consume(code);
       return afterSep;
@@ -76,7 +73,9 @@ function tokenizeKbdAttempt(effects, ok, nok) {
   }
 
   function content(code) {
-    if (code === codes.eof) return nok(code);
+    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
+      return nok(code);
+    }
     if (code === codes.rightCurlyBrace) return maybeClose;
     if (!isWhitespace(code)) hasContent = true;
     effects.consume(code);

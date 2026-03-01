@@ -4,12 +4,7 @@ import { codes } from "micromark-util-symbol";
 const BADGE_RE = /^\{\{badge\s*[: ]\s*([^}]+)\}\}$/s;
 
 function isWhitespace(code) {
-  return (
-    code === codes.space ||
-    code === codes.horizontalTab ||
-    code === codes.lineFeed ||
-    code === codes.carriageReturn
-  );
+  return code === codes.space || code === codes.horizontalTab;
 }
 
 function tokenizeBadge(effects, ok, nok) {
@@ -65,6 +60,7 @@ function tokenizeBadgeAttempt(effects, ok, nok) {
   }
 
   function beforeSep(code) {
+    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
     if (isWhitespace(code)) {
       effects.consume(code);
       return beforeSep;
@@ -77,6 +73,7 @@ function tokenizeBadgeAttempt(effects, ok, nok) {
   }
 
   function afterSep(code) {
+    if (code === codes.lineFeed || code === codes.carriageReturn) return nok(code);
     if (isWhitespace(code)) {
       effects.consume(code);
       return afterSep;
@@ -88,7 +85,9 @@ function tokenizeBadgeAttempt(effects, ok, nok) {
   }
 
   function content(code) {
-    if (code === codes.eof) return nok(code);
+    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
+      return nok(code);
+    }
     if (code === codes.rightCurlyBrace) return maybeClose;
     if (!isWhitespace(code)) hasContent = true;
     effects.consume(code);

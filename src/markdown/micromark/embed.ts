@@ -4,12 +4,7 @@ import { codes } from "micromark-util-symbol";
 const EMBED_RE = /^!\[\[(youtube|bilibili):([^\]\s]+)([^\]]*)\]\]$/s;
 
 function isWhitespace(code) {
-  return (
-    code === codes.space ||
-    code === codes.horizontalTab ||
-    code === codes.lineFeed ||
-    code === codes.carriageReturn
-  );
+  return code === codes.space || code === codes.horizontalTab;
 }
 
 function parseParams(spec) {
@@ -101,7 +96,9 @@ function tokenizeEmbedAttempt(effects, ok, nok) {
   }
 
   function after(code) {
-    if (code === codes.eof) return nok(code);
+    if (code === codes.eof || code === codes.lineFeed || code === codes.carriageReturn) {
+      return nok(code);
+    }
     if (code === codes.rightSquareBracket) return maybeClose;
     effects.consume(code);
     return after;
