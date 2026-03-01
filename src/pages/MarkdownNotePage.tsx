@@ -78,6 +78,13 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
     () => [remarkGfm, remarkMath, createHeadingPlugin(), createObsidianLinkPlugin()],
     []
   );
+  const allowHtml = true;
+  const rehypePlugins = useMemo(() => {
+    if (!allowHtml) {
+      return [rehypeKatex];
+    }
+    return [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeKatex];
+  }, [allowHtml]);
 
   const scrollToHeading = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
@@ -279,11 +286,7 @@ export default function MarkdownNotePage({ slug }: MarkdownNotePageProps) {
         {hasContent ? (
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
-            rehypePlugins={[
-              rehypeRaw,
-              [rehypeSanitize, sanitizeSchema],
-              rehypeKatex,
-            ]}
+            rehypePlugins={rehypePlugins}
             components={{
               h2: renderHeading("h2"),
               h3: renderHeading("h3"),
